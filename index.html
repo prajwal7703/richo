@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Richo — Get things done, locally</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+/* ============ RESET & BASE ============ */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --ink: #0F2620;
+  --primary: #1B4B43;
+  --primary-light: #2E6A5D;
+  --pale: #E7F0EC;
+  --accent: #FFB020;
+  --accent-dark: #E6980A;
+  --bg: #F6F1E4;
+  --card: #FFFFFF;
+  --text: #16231F;
+  --muted: #6E7B76;
+  --border: #E7E0CE;
+  --danger: #D6503F;
+  --radius: 18px;
+  --mono: 'IBM Plex Mono', monospace;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: #DCD6C2;
+  color: var(--text);
+  display: flex;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+h1, h2, h3 { font-family: 'Sora', sans-serif; color: var(--text); }
+
+button, input, select, textarea { font-family: 'Inter', sans-serif; font-size: 15px; }
+
+.num { font-family: var(--mono); font-weight: 600; letter-spacing: -0.2px; }
+
+/* ============ PHONE FRAME ============ */
+.phone-frame {
+  width: 420px;
+  max-width: 100vw;
+  min-height: 100vh;
+  background: var(--bg);
+  position: relative;
+  overflow-x: hidden;
+  padding-bottom: 76px;
+  box-shadow: 0 0 40px rgba(0,0,0,0.15);
+}
+
+.screen { display: none; min-height: 100vh; flex-direction: column; animation: fadeIn 0.25s ease; }
+.screen.active { display: flex; }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ============ SHARED ============ */
+.content { padding: 16px 20px 24px; flex: 1; }
+.muted { color: var(--muted); }
+.small { font-size: 13px; }
+.center { text-align: center; }
+.center-content { align-items: center; justify-content: center; text-align: center; display: flex; flex-direction: column; gap: 10px; padding: 40px 30px; flex: 1; }
+
+.btn { border: none; border-radius: 999px; padding: 14px 24px; font-weight: 700; font-size: 15px; cursor: pointer; transition: transform 0.15s ease, opacity 0.15s ease; }
+.btn:active { transform: scale(0.97); }
+.btn-primary { background: var(--ink); color: #fff; }
+.btn-primary:hover { background: #000; }
+.btn-block { width: 100%; }
+
+.link-btn { background: none; border: none; color: var(--primary); font-weight: 700; font-size: 14px; cursor: pointer; }
+
+.icon-btn { background: none; border: none; font-size: 20px; cursor: pointer; position: relative; width: 32px; text-align: center; }
+
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px 8px; background: var(--bg); }
+.topbar h2 { font-size: 19px; }
+
+/* ============ SPLASH ============ */
+.splash {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 10px; padding: 40px;
+  background: radial-gradient(120% 90% at 50% -10%, #1E5A50 0%, var(--ink) 65%);
+  color: white;
+}
+.splash-logo { margin-bottom: 10px; }
+.splash-title { font-size: 42px; font-weight: 800; color: white; letter-spacing: -1px; }
+.splash-tag { color: #A9CFC3; margin-bottom: 30px; }
+.splash .btn-primary { max-width: 260px; background: var(--accent); color: var(--ink); font-weight: 800; }
+.splash .btn-primary:hover { background: var(--accent-dark); }
+
+/* ============ ROLE SELECT ============ */
+.role-hero { background: linear-gradient(135deg, var(--ink), #1E5A50); color: white; padding: 20px 20px 40px; border-radius: 0 0 28px 28px; }
+.role-hero-title { color: white; font-size: 24px; margin-top: 30px; }
+.role-hero-sub { color: #A9CFC3; margin-top: 4px; }
+.role-content { margin-top: -20px; }
+.icon-btn.light { color: var(--ink); background: var(--accent); border-radius: 12px; width: 36px; height: 36px; font-size: 17px; }
+
+.role-card-v2 {
+  display: flex; align-items: center; gap: 14px; background: var(--card);
+  border: 1.5px solid var(--border); border-radius: 18px; padding: 18px; margin-bottom: 14px;
+  cursor: pointer; box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+.role-card-v2:hover { transform: translateY(-3px); border-color: var(--accent); }
+.role-icon-wrap { width: 52px; height: 52px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 26px; flex-shrink: 0; }
+.role-icon-wrap.need-help { background: #FCE6C2; }
+.role-icon-wrap.want-earn { background: var(--pale); }
+.role-card-text h3 { font-size: 16px; margin-bottom: 2px; }
+.role-arrow { margin-left: auto; color: var(--muted); font-size: 18px; }
+
+/* ============ HOME HEADER ============ */
+.home-header {
+  background: radial-gradient(140% 100% at 100% -20%, #1E5A50 0%, var(--ink) 60%);
+  padding: 18px 20px 34px;
+  border-radius: 0 0 28px 28px;
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+.home-header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; position: relative; z-index: 2; }
+.location-pill { display: flex; gap: 10px; align-items: center; cursor: pointer; }
+.location-icon { background: rgba(255,255,255,0.12); width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+.location-label { font-size: 11px; color: #A9CFC3; }
+.location-value { font-size: 14px; font-weight: 700; }
+.greeting { font-size: 22px; font-weight: 800; color: white; margin-bottom: 16px; position: relative; z-index: 2; }
+
+/* Hero card */
+.hero-card {
+  position: relative;
+  background: linear-gradient(155deg, #FFC24D 0%, var(--accent) 55%, var(--accent-dark) 100%);
+  border-radius: 22px;
+  padding: 20px 20px 18px;
+  overflow: hidden;
+  z-index: 2;
+}
+.hero-watermark { position: absolute; right: -6px; bottom: -14px; font-size: 92px; opacity: 0.16; transform: rotate(-6deg); pointer-events: none; }
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(15,38,32,0.9); color: #DFF2EA; font-size: 12px; font-weight: 700;
+  padding: 6px 12px; border-radius: 999px; margin-bottom: 12px;
+}
+.hero-badge .dot { width: 6px; height: 6px; border-radius: 50%; background: #6FE3A6; }
+.hero-title { font-size: 22px; color: var(--ink); margin-bottom: 4px; position: relative; z-index: 2; }
+.hero-sub { font-size: 13.5px; color: #3A2A08; opacity: 0.85; margin-bottom: 16px; position: relative; z-index: 2; max-width: 90%; }
+
+.hero-categories { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 16px; scrollbar-width: none; position: relative; z-index: 2; }
+.hero-categories::-webkit-scrollbar { display: none; }
+.category-chip {
+  flex-shrink: 0; width: 84px; background: rgba(15,38,32,0.92); border-radius: 14px; padding: 10px 8px 9px;
+  display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer;
+  border: 1.5px solid transparent; transition: transform 0.15s ease, border-color 0.15s ease;
+}
+.category-chip:hover { transform: translateY(-2px); }
+.category-chip.active { border-color: var(--accent); background: var(--ink); }
+.category-chip .cat-icon {
+  width: 30px; height: 30px; border-radius: 9px; background: rgba(255,176,32,0.22);
+  display: flex; align-items: center; justify-content: center; font-size: 15px;
+}
+.category-chip .cat-label { font-size: 10.5px; font-weight: 700; color: #DFF2EA; text-align: center; line-height: 1.2; }
+
+.hero-cta {
+  width: 100%; background: var(--ink); color: #fff; border: none; padding: 15px;
+  border-radius: 14px; font-weight: 800; font-size: 15px; cursor: pointer;
+  position: relative; z-index: 2;
+}
+.hero-cta:active { transform: scale(0.98); }
+
+/* ============ SEARCH ============ */
+.search-row { margin-bottom: 12px; margin-top: -18px; position: relative; z-index: 3; }
+.search-input, .field-input, .chat-input {
+  width: 100%; padding: 13px 16px; border: 1.5px solid var(--border); border-radius: 12px;
+  background: var(--card); outline: none; box-shadow: 0 6px 16px rgba(0,0,0,0.05);
+}
+.search-input:focus, .field-input:focus { border-color: var(--primary); }
+
+.section-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.section-head h3 { font-size: 16px; }
+.section-arrow { background: var(--primary); color: white; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: 700; flex-shrink: 0; }
+
+/* ============ TASK CARDS ============ */
+.task-list { display: flex; flex-direction: column; gap: 12px; }
+.task-card {
+  display: flex; gap: 12px; background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--radius); padding: 14px; cursor: pointer; transition: border-color 0.15s ease, transform 0.15s ease;
+}
+.task-card:hover { border-color: var(--accent); transform: translateY(-1px); }
+.task-card-icon { width: 42px; height: 42px; border-radius: 12px; background: var(--pale); display: flex; align-items: center; justify-content: center; font-size: 19px; flex-shrink: 0; }
+.task-card-body { flex: 1; min-width: 0; }
+.task-card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
+.task-card-title { font-weight: 700; font-size: 14.5px; }
+.task-card-budget { font-size: 15px; color: var(--primary); white-space: nowrap; }
+.task-card-meta { display: flex; gap: 8px; font-size: 12px; color: var(--muted); align-items: center; flex-wrap: wrap; }
+.status-pill { font-size: 10.5px; font-weight: 700; padding: 3px 9px; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.3px; }
+.status-open { background: #DEF2E6; color: #16744A; }
+.status-progress { background: #FCE9C4; color: #A9700B; }
+.status-completed { background: #ECEAE2; color: #6E7B76; }
+
+/* ============ MAP MOCK ============ */
+.map-mock { height: 260px; background: #E4E9DE; position: relative; overflow: hidden; }
+.map-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(27,75,67,0.10) 1px, transparent 1px), linear-gradient(90deg, rgba(27,75,67,0.10) 1px, transparent 1px); background-size: 28px 28px; }
+.map-pin { position: absolute; background: var(--accent); color: var(--ink); font-weight: 700; font-size: 12px; padding: 6px 10px; border-radius: 999px 999px 999px 2px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); cursor: pointer; transform: translate(-50%, -50%); font-family: var(--mono); }
+.map-pin.me { background: var(--ink); color: white; top: 50%; left: 50%; border-radius: 999px; cursor: default; font-family: 'Inter', sans-serif; }
+
+.filter-row { display: flex; gap: 10px; margin: 16px 0; }
+.select { flex: 1; padding: 10px 12px; border-radius: 10px; border: 1.5px solid var(--border); background: var(--card); }
+
+/* ============ POST TASK FORM ============ */
+.field-label { display: block; font-size: 13px; font-weight: 700; margin: 14px 0 6px; color: var(--text); }
+textarea.field-input { resize: none; }
+.row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.location-mock { display: flex; justify-content: space-between; align-items: center; background: var(--card); border: 1.5px solid var(--border); border-radius: 12px; padding: 13px 16px; }
+
+/* ============ CONFIRMATION ============ */
+.confirm-check { width: 72px; height: 72px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 34px; margin-bottom: 6px; }
+
+/* ============ TASK DETAIL ============ */
+.detail-title { font-size: 20px; margin-bottom: 4px; }
+.detail-budget { color: var(--primary); font-weight: 800; font-size: 24px; margin: 10px 0; font-family: var(--mono); }
+.detail-meta-row { display: flex; gap: 14px; color: var(--muted); font-size: 13px; margin-bottom: 14px; flex-wrap: wrap; }
+.detail-desc { line-height: 1.6; margin-bottom: 20px; }
+.applicant-card { display: flex; gap: 12px; align-items: center; background: var(--card); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 12px; margin-bottom: 10px; }
+.avatar-sm { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; }
+.avatar-lg { width: 84px; height: 84px; border-radius: 50%; object-fit: cover; }
+.applicant-info { flex: 1; }
+.applicant-name { font-weight: 700; font-size: 14px; }
+.applicant-meta { font-size: 12.5px; color: var(--muted); }
+.applicant-actions { display: flex; gap: 6px; }
+.mini-btn { border: 1.5px solid var(--border); background: var(--card); border-radius: 8px; padding: 6px 10px; font-size: 12px; font-weight: 700; cursor: pointer; }
+.mini-btn.primary { background: var(--primary); color: white; border-color: var(--primary); }
+
+/* ============ CHAT ============ */
+.chat-header-user { display: flex; align-items: center; gap: 8px; }
+.chat-header-user h3 { font-size: 15px; }
+.chat-messages { flex: 1; padding: 16px 20px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
+.msg { max-width: 75%; padding: 10px 14px; border-radius: 16px; font-size: 14px; line-height: 1.4; }
+.msg-them { background: var(--card); border: 1.5px solid var(--border); align-self: flex-start; border-bottom-left-radius: 4px; }
+.msg-me { background: var(--primary); color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
+.msg-time { font-size: 10.5px; color: var(--muted); margin-top: 3px; }
+.chat-quick-actions { display: flex; gap: 8px; padding: 8px 16px; overflow-x: auto; }
+.chip-btn { flex-shrink: 0; background: var(--pale); color: var(--primary); border: none; padding: 8px 14px; border-radius: 999px; font-size: 12.5px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.chat-input-row { display: flex; gap: 8px; padding: 10px 16px 16px; background: var(--bg); align-items: center; }
+.send-btn { background: var(--accent); border: none; width: 42px; height: 42px; border-radius: 50%; font-size: 16px; cursor: pointer; flex-shrink: 0; color: var(--ink); }
+
+/* ============ NOTIFICATIONS ============ */
+.notif-item { display: flex; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--border); }
+.notif-icon { width: 38px; height: 38px; border-radius: 50%; background: var(--pale); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 16px; }
+.notif-text { font-size: 14px; line-height: 1.4; }
+.notif-time { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+/* ============ PROFILE ============ */
+.profile-head { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 10px 0 20px; }
+.rating-row { margin: 6px 0; font-weight: 700; display: flex; align-items: center; gap: 6px; font-family: var(--mono); }
+.badge-row { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; justify-content: center; }
+.badge { background: var(--pale); color: var(--primary); font-size: 11.5px; font-weight: 700; padding: 5px 10px; border-radius: 999px; }
+
+.tab-row { display: flex; border-bottom: 1.5px solid var(--border); margin-bottom: 16px; }
+.tab-btn { flex: 1; background: none; border: none; padding: 10px 4px; font-weight: 700; font-size: 13px; color: var(--muted); cursor: pointer; border-bottom: 2.5px solid transparent; }
+.tab-btn.active { color: var(--primary); border-color: var(--accent); }
+
+.review-card { background: var(--card); border: 1.5px solid var(--border); border-radius: 14px; padding: 12px 14px; margin-bottom: 10px; }
+.review-top { display: flex; justify-content: space-between; font-weight: 700; font-size: 13.5px; margin-bottom: 4px; }
+.review-text { font-size: 13.5px; color: var(--muted); line-height: 1.5; }
+
+/* ============ EARNINGS ============ */
+.earnings-card { background: linear-gradient(155deg, var(--ink), var(--primary)); color: white; border-radius: var(--radius); padding: 20px; margin-bottom: 20px; }
+.earnings-card .muted { color: #A9CFC3; }
+.earnings-total { font-size: 36px; font-weight: 800; margin: 4px 0; color: var(--accent); font-family: var(--mono); }
+.bar-chart { display: flex; align-items: flex-end; gap: 8px; height: 120px; margin-top: 10px; }
+.bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; justify-content: flex-end; height: 100%; }
+.bar { width: 100%; background: var(--accent); border-radius: 6px 6px 0 0; }
+.bar-label { font-size: 11px; color: var(--muted); }
+
+.payout-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+.payout-amount { font-weight: 700; color: var(--primary); font-family: var(--mono); }
+
+/* ============ SETTINGS ============ */
+.settings-item { display: flex; justify-content: space-between; align-items: center; padding: 16px 4px; border-bottom: 1px solid var(--border); cursor: pointer; font-size: 14.5px; }
+.settings-item.danger { color: var(--danger); font-weight: 600; }
+
+/* ============ BOTTOM NAV ============ */
+.bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 420px; max-width: 100vw; background: var(--card); border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 8px 4px 10px; z-index: 10; }
+.nav-btn { background: none; border: none; display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 10.5px; font-weight: 700; color: var(--muted); cursor: pointer; padding: 4px 8px; }
+.nav-btn span { font-size: 18px; }
+.nav-btn.active { color: var(--primary); }
+
+/* ============ QUICK TASK GRID ============ */
+.quick-task-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.quick-task-chip { display: flex; align-items: center; gap: 8px; background: var(--card); border: 1.5px solid var(--border); border-radius: 12px; padding: 10px 12px; font-size: 12.5px; font-weight: 600; cursor: pointer; transition: border-color 0.15s ease; }
+.quick-task-chip:hover { border-color: var(--accent); }
+.quick-task-chip .check { color: var(--ink); background: var(--accent); width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; flex-shrink: 0; }
+
+.notif-banner { display: flex; justify-content: space-between; align-items: center; background: linear-gradient(120deg, var(--pale), #F4FAF6); border: 1px solid #D3E8DE; border-radius: 16px; padding: 16px; margin-top: 20px; cursor: pointer; gap: 10px; }
+</style>
+</head>
+<body>
+
+<div class="phone-frame">
+
+  <!-- ===== SPLASH / ONBOARDING ===== -->
+  <section id="screen-splash" class="screen active">
+    <div class="splash">
+      <div class="splash-logo">
+        <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+          <circle cx="32" cy="32" r="32" fill="#FFB020"/>
+          <path d="M32 14C24.8 14 19 19.8 19 27C19 37 32 50 32 50C32 50 45 37 45 27C45 19.8 39.2 14 32 14Z" fill="#1B4B43"/>
+          <circle cx="32" cy="27" r="6" fill="#FFB020"/>
+        </svg>
+      </div>
+      <h1 class="splash-title">Richo</h1>
+      <p class="splash-tag">Get things done, locally.</p>
+      <button class="btn btn-primary btn-block" onclick="goTo('screen-role')">Get Started</button>
+    </div>
+  </section>
+
+  <!-- ===== ROLE SELECT ===== -->
+  <section id="screen-role" class="screen">
+    <div class="role-hero">
+      <button class="icon-btn light" onclick="goTo('screen-splash')">←</button>
+      <h1 class="role-hero-title">Welcome to Richo</h1>
+      <p class="role-hero-sub">What brings you here today?</p>
+    </div>
+    <div class="content role-content">
+      <div class="role-card-v2" onclick="setRoleAndGo('poster')">
+        <div class="role-icon-wrap need-help">🙋</div>
+        <div class="role-card-text">
+          <h3>I need help</h3>
+          <p class="muted small">Post a task and get it done by someone nearby</p>
+        </div>
+        <span class="role-arrow">→</span>
+      </div>
+      <div class="role-card-v2" onclick="setRoleAndGo('helper')">
+        <div class="role-icon-wrap want-earn">💪</div>
+        <div class="role-card-text">
+          <h3>I want to earn</h3>
+          <p class="muted small">Find nearby tasks and start earning today</p>
+        </div>
+        <span class="role-arrow">→</span>
+      </div>
+      <p class="muted small center" style="margin-top:20px;">You can switch roles anytime from Settings</p>
+    </div>
+  </section>
+
+  <!-- ===== HOME (POSTER VIEW) ===== -->
+  <section id="screen-home" class="screen">
+    <div class="home-header">
+      <div class="home-header-top">
+        <div class="location-pill" onclick="goTo('screen-map')">
+          <span class="location-icon">📍</span>
+          <div>
+            <div class="location-label">Your location</div>
+            <div class="location-value">Indiranagar, Bengaluru ▾</div>
+          </div>
+        </div>
+        <button class="icon-btn light" onclick="goTo('screen-notifications')">🔔</button>
+      </div>
+      <div class="greeting">Hey Aditi, what's the job?</div>
+
+      <div class="hero-card">
+        <div class="hero-watermark">🛺</div>
+        <div class="hero-badge"><span class="dot"></span> 6 helpers active within 3 km</div>
+        <h2 class="hero-title">Need a hand today?</h2>
+        <p class="hero-sub">Post it and get replies from people around Indiranagar in minutes.</p>
+        <div class="hero-categories" id="category-grid"></div>
+        <button class="hero-cta" onclick="goTo('screen-post-task')">+ Create a Task</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="search-row">
+        <input class="search-input" id="home-search" placeholder="Search tasks, e.g. 'dog walk'" oninput="searchTasks(this.value)">
+      </div>
+
+      <div class="section-head">
+        <div>
+          <p class="muted small">Small jobs, big rewards</p>
+          <h3 id="opportunities-heading">Nearby Opportunities</h3>
+        </div>
+        <span class="section-arrow" onclick="goTo('screen-map')">↗</span>
+      </div>
+      <div id="task-list" class="task-list"></div>
+
+      <div class="section-head" style="margin-top:24px;">
+        <h3>Try These on Richo</h3>
+      </div>
+      <div class="quick-task-grid" id="quick-task-grid"></div>
+
+      <div class="notif-banner" onclick="goTo('screen-notifications')">
+        <div>
+          <h3 style="margin-bottom:2px;">Richo Community</h3>
+          <p class="muted small">Helplines and safety tips for helpers & posters</p>
+        </div>
+        <span class="section-arrow">↗</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== MAP (HELPER VIEW) ===== -->
+  <section id="screen-map" class="screen">
+    <div class="topbar"><button class="icon-btn" onclick="goTo('screen-home')">←</button><h2>Nearby Tasks</h2><span></span></div>
+    <div class="map-mock">
+      <div class="map-grid"></div>
+      <div class="map-pin" style="top:30%; left:25%;" onclick="openTask('t2')">₹300</div>
+      <div class="map-pin" style="top:55%; left:60%;" onclick="openTask('t4')">₹800</div>
+      <div class="map-pin" style="top:70%; left:30%;" onclick="openTask('t6')">₹150</div>
+      <div class="map-pin me">You</div>
+    </div>
+    <div class="content">
+      <div class="filter-row">
+        <select class="select"><option>Within 3 km</option><option>Within 5 km</option><option>Within 10 km</option></select>
+        <select class="select"><option>All categories</option><option>Home Services</option><option>Tutoring</option></select>
+      </div>
+      <div id="task-list-2" class="task-list"></div>
+    </div>
+  </section>
+
+  <!-- ===== POST A TASK ===== -->
+  <section id="screen-post-task" class="screen">
+    <div class="topbar"><button class="icon-btn" onclick="goTo('screen-home')">←</button><h2>Post a Task</h2><span></span></div>
+    <div class="content">
+      <label class="field-label">Task title</label>
+      <input class="field-input" id="pt-title" placeholder="e.g. Assemble a bookshelf">
+      <label class="field-label">Description</label>
+      <textarea class="field-input" id="pt-desc" rows="3" placeholder="Add details helpers should know"></textarea>
+      <label class="field-label">Category</label>
+      <select class="field-input" id="pt-category">
+        <option>Home Services</option><option>Delivery & Moving</option><option>Errands</option>
+        <option>Outdoor Tasks</option><option>Tech Support</option><option>Tutoring</option>
+        <option>Pet Care</option><option>Cleaning</option>
+      </select>
+      <div class="row-2">
+        <div>
+          <label class="field-label">Budget (₹)</label>
+          <input class="field-input" id="pt-budget" type="number" placeholder="500">
+        </div>
+        <div>
+          <label class="field-label">When</label>
+          <input class="field-input" id="pt-when" placeholder="Today, 5 PM">
+        </div>
+      </div>
+      <label class="field-label">Location</label>
+      <div class="location-mock">📍 Indiranagar, Bengaluru <span class="link-btn">Change</span></div>
+      <button class="btn btn-primary btn-block" style="margin-top:20px; background:var(--accent); color:var(--ink);" onclick="submitTask()">Post Task</button>
+    </div>
+  </section>
+
+  <!-- ===== TASK CONFIRMATION ===== -->
+  <section id="screen-confirm" class="screen">
+    <div class="content center-content">
+      <div class="confirm-check">✓</div>
+      <h2>Your task is live!</h2>
+      <p class="muted center">Nearby helpers will start applying soon. We'll notify you.</p>
+      <button class="btn btn-primary btn-block" onclick="goTo('screen-home')">Back to Home</button>
+    </div>
+  </section>
+
+  <!-- ===== TASK DETAIL ===== -->
+  <section id="screen-task-detail" class="screen">
+    <div class="topbar"><button class="icon-btn" onclick="goBackFromDetail()">←</button><h2>Task Details</h2><span></span></div>
+    <div class="content" id="task-detail-content"></div>
+  </section>
+
+  <!-- ===== CHAT ===== -->
+  <section id="screen-chat" class="screen">
+    <div class="topbar">
+      <button class="icon-btn" onclick="goTo('screen-task-detail')">←</button>
+      <div class="chat-header-user">
+        <img id="chat-avatar" class="avatar-sm" src="" alt="">
+        <h3 id="chat-name">Helper</h3>
+      </div>
+      <span></span>
+    </div>
+    <div class="chat-messages" id="chat-messages"></div>
+    <div class="chat-quick-actions">
+      <button class="chip-btn" onclick="quickAction('price')">Confirm price</button>
+      <button class="chip-btn" onclick="quickAction('location')">Share location</button>
+      <button class="chip-btn" onclick="quickAction('complete')">Mark complete</button>
+    </div>
+    <div class="chat-input-row">
+      <input class="chat-input" id="chat-input" placeholder="Type a message">
+      <button class="send-btn" onclick="sendMessage()">➤</button>
+    </div>
+  </section>
+
+  <!-- ===== NOTIFICATIONS ===== -->
+  <section id="screen-notifications" class="screen">
+    <div class="topbar"><button class="icon-btn" onclick="goTo('screen-home')">←</button><h2>Notifications</h2><span></span></div>
+    <div class="content" id="notif-list"></div>
+  </section>
+
+  <!-- ===== PROFILE ===== -->
+  <section id="screen-profile" class="screen">
+    <div class="topbar"><span></span><h2>Profile</h2><button class="icon-btn" onclick="goTo('screen-settings')">⚙️</button></div>
+    <div class="content">
+      <div class="profile-head">
+        <img class="avatar-lg" src="https://i.pravatar.cc/150?img=47" alt="">
+        <h2 style="margin:8px 0 2px;">Aditi Rao</h2>
+        <p class="muted small">Working Professional · Indiranagar, Bengaluru</p>
+        <div class="rating-row">⭐ 4.9 <span class="muted small">(38 reviews)</span></div>
+        <div class="badge-row">
+          <span class="badge">✓ Phone Verified</span>
+          <span class="badge">✓ ID Verified</span>
+        </div>
+      </div>
+      <div class="tab-row">
+        <button class="tab-btn active" onclick="switchProfileTab(this,'posted')">Tasks Posted</button>
+        <button class="tab-btn" onclick="switchProfileTab(this,'completed')">Completed</button>
+        <button class="tab-btn" onclick="switchProfileTab(this,'reviews')">Reviews</button>
+      </div>
+      <div id="profile-tab-content"></div>
+    </div>
+  </section>
+
+  <!-- ===== EARNINGS (HELPER DASHBOARD) ===== -->
+  <section id="screen-earnings" class="screen">
+    <div class="topbar"><span></span><h2>Earnings</h2><span></span></div>
+    <div class="content">
+      <div class="earnings-card">
+        <p class="muted small">Total earned</p>
+        <h1 class="earnings-total">₹12,450</h1>
+        <p class="muted small">18 tasks completed · ⭐ 4.8 average rating</p>
+      </div>
+      <h3>This week</h3>
+      <div class="bar-chart" id="bar-chart"></div>
+      <h3 style="margin-top:20px;">Recent payouts</h3>
+      <div id="payout-list"></div>
+    </div>
+  </section>
+
+  <!-- ===== SETTINGS ===== -->
+  <section id="screen-settings" class="screen">
+    <div class="topbar"><button class="icon-btn" onclick="goTo('screen-profile')">←</button><h2>Settings</h2><span></span></div>
+    <div class="content">
+      <div class="settings-item"><span>Edit profile</span><span>›</span></div>
+      <div class="settings-item"><span>Notification preferences</span><span>›</span></div>
+      <div class="settings-item" onclick="toggleRole()"><span>Switch to <b id="switch-role-label">Helper</b> mode</span><span>⇄</span></div>
+      <div class="settings-item"><span>Payment methods</span><span>›</span></div>
+      <div class="settings-item"><span>Help & Support</span><span>›</span></div>
+      <div class="settings-item danger" onclick="goTo('screen-splash')"><span>Log out</span><span>›</span></div>
+    </div>
+  </section>
+
+</div>
+
+<!-- ===== BOTTOM NAV ===== -->
+<nav class="bottom-nav" id="bottom-nav">
+  <button class="nav-btn active" data-screen="screen-home" onclick="navTo('screen-home')"><span>🏠</span>Home</button>
+  <button class="nav-btn" data-screen="screen-map" onclick="navTo('screen-map')"><span>🗺️</span>Explore</button>
+  <button class="nav-btn" data-screen="screen-chat" onclick="navTo('screen-chat')"><span>💬</span>Chats</button>
+  <button class="nav-btn" data-screen="screen-earnings" onclick="navTo('screen-earnings')"><span>💰</span>Earnings</button>
+  <button class="nav-btn" data-screen="screen-profile" onclick="navTo('screen-profile')"><span>👤</span>Profile</button>
+</nav>
+
+<script>
+// ============ DUMMY DATA FOR RICHO DEMO ============
+const CATEGORIES = [
+  "All", "Home Services", "Delivery & Moving", "Errands",
+  "Outdoor Tasks", "Tech Support", "Tutoring", "Pet Care", "Cleaning"
+];
+
+const USERS = {
+  u1: { id: "u1", name: "Aditi Rao", avatar: "https://i.pravatar.cc/150?img=47", rating: 4.9, reviews: 38, occupation: "Working Professional", location: "Indiranagar, Bengaluru" },
+  u2: { id: "u2", name: "Rohan Mehta", avatar: "https://i.pravatar.cc/150?img=12", rating: 4.7, reviews: 22, occupation: "Freelancer" },
+  u3: { id: "u3", name: "Sneha Kulkarni", avatar: "https://i.pravatar.cc/150?img=32", rating: 4.8, reviews: 51, occupation: "Student" },
+  u4: { id: "u4", name: "Arjun Nair", avatar: "https://i.pravatar.cc/150?img=15", rating: 4.6, reviews: 14, occupation: "Business Owner" },
+  u5: { id: "u5", name: "Priya Singh", avatar: "https://i.pravatar.cc/150?img=25", rating: 5.0, reviews: 9, occupation: "Homemaker" },
+  u6: { id: "u6", name: "Karan Das", avatar: "https://i.pravatar.cc/150?img=53", rating: 4.5, reviews: 30, occupation: "Job Seeker" }
+};
+
+const TASKS = [
+  { id: "t1", title: "Assemble a bookshelf", category: "Home Services", budget: 500, distance: "1.2 km", time: "10 min ago", status: "open", posterId: "u1", desc: "Need help assembling a 5-shelf IKEA bookshelf. Tools will be provided. Should take about an hour." },
+  { id: "t2", title: "Walk my dog this evening", category: "Pet Care", budget: 300, distance: "0.8 km", time: "25 min ago", status: "open", posterId: "u4", desc: "Looking for someone to walk my golden retriever for 30-40 mins around the block. He's friendly and well-behaved." },
+  { id: "t3", title: "Math tutoring for 10th grader", category: "Tutoring", budget: 600, distance: "2.1 km", time: "1 hr ago", status: "in_progress", posterId: "u5", desc: "Need weekly algebra tutoring sessions for my daughter, board exam prep. Flexible timing." },
+  { id: "t4", title: "Help moving a sofa upstairs", category: "Delivery & Moving", budget: 800, distance: "3.4 km", time: "2 hr ago", status: "open", posterId: "u2", desc: "Sofa needs to go from ground floor to 2nd floor apartment. No elevator, narrow staircase." },
+  { id: "t5", title: "Grocery pickup and drop", category: "Errands", budget: 250, distance: "1.5 km", time: "3 hr ago", status: "completed", posterId: "u3", desc: "Pick up a grocery list from the supermarket and drop it at my apartment." },
+  { id: "t6", title: "Fix a leaking kitchen tap", category: "Home Services", budget: 150, distance: "0.5 km", time: "4 hr ago", status: "open", posterId: "u6", desc: "Small leak under the kitchen sink, likely just needs a washer replaced." },
+  { id: "t7", title: "Set up new laptop + transfer files", category: "Tech Support", budget: 400, distance: "2.8 km", time: "5 hr ago", status: "open", posterId: "u1", desc: "Need help setting up a new Windows laptop and transferring files from the old one." },
+  { id: "t8", title: "Water my plants while I'm away", category: "Outdoor Tasks", budget: 200, distance: "1.9 km", time: "6 hr ago", status: "in_progress", posterId: "u5", desc: "Away for a week, need someone to water balcony plants every 2 days." },
+  { id: "t9", title: "Deep clean 2BHK apartment", category: "Cleaning", budget: 1200, distance: "4.0 km", time: "Yesterday", status: "completed", posterId: "u4", desc: "Full deep clean including kitchen, bathrooms, and windows." },
+  { id: "t10", title: "Pick up medicine from pharmacy", category: "Errands", budget: 100, distance: "0.6 km", time: "Yesterday", status: "completed", posterId: "u3", desc: "Quick pharmacy run, prescription already called in." }
+];
+
+const APPLICANTS = {
+  t1: [
+    { userId: "u3", quote: 500, note: "I've assembled IKEA furniture many times, can come today evening." },
+    { userId: "u6", quote: 450, note: "Available now, bring my own basic toolkit too." }
+  ],
+  t4: [
+    { userId: "u5", quote: 800, note: "Have moving experience, can bring a friend to help lift." },
+    { userId: "u3", quote: 750, note: "Free this afternoon, live close by." }
+  ],
+  t2: [
+    { userId: "u6", quote: 300, note: "Love dogs! Free every evening this week." }
+  ]
+};
+
+const REVIEWS = [
+  { reviewerId: "u2", rating: 5, text: "Super punctual and did a great job assembling my shelf!" },
+  { reviewerId: "u4", rating: 5, text: "Very trustworthy, would hire again." },
+  { reviewerId: "u5", rating: 4, text: "Good work, communicated well throughout." },
+  { reviewerId: "u6", rating: 5, text: "Finished early and cleaned up after. Highly recommend." }
+];
+
+const NOTIFICATIONS = [
+  { icon: "📥", text: "Sneha Kulkarni applied to your task 'Assemble a bookshelf'", time: "5 min ago" },
+  { icon: "📍", text: "New task posted 0.8 km away: 'Fix a leaking kitchen tap'", time: "20 min ago" },
+  { icon: "💬", text: "Rohan Mehta sent you a message", time: "1 hr ago" },
+  { icon: "✅", text: "Your task 'Grocery pickup and drop' was marked complete", time: "3 hr ago" },
+  { icon: "⭐", text: "You received a new 5-star review from Arjun Nair", time: "Yesterday" }
+];
+
+const CHAT_MESSAGES = [
+  { from: "them", text: "Hi! I saw your task, happy to help with the bookshelf assembly.", time: "10:02 AM" },
+  { from: "me", text: "Great! Do you have your own tools?", time: "10:03 AM" },
+  { from: "them", text: "Yes, I have a full toolkit. I can come by around 5 PM today.", time: "10:05 AM" },
+  { from: "me", text: "Perfect, that works for me. See you then!", time: "10:06 AM" },
+  { from: "them", text: "Sounds good, confirming ₹500 for the job.", time: "10:06 AM" }
+];
+
+const WEEKLY_EARNINGS = [
+  { day: "Mon", amount: 300 },
+  { day: "Tue", amount: 450 },
+  { day: "Wed", amount: 200 },
+  { day: "Thu", amount: 600 },
+  { day: "Fri", amount: 350 },
+  { day: "Sat", amount: 800 },
+  { day: "Sun", amount: 150 }
+];
+
+const PAYOUTS = [
+  { title: "Grocery pickup and drop", amount: 250, date: "Jul 2" },
+  { title: "Deep clean 2BHK apartment", amount: 1200, date: "Jun 29" },
+  { title: "Pick up medicine from pharmacy", amount: 100, date: "Jun 27" }
+];
+
+const CATEGORY_ICONS = {
+  "Home Services": "🏠",
+  "Delivery & Moving": "📦",
+  "Errands": "🛒",
+  "Outdoor Tasks": "🌿",
+  "Tech Support": "💻",
+  "Tutoring": "📚",
+  "Pet Care": "🐾",
+  "Cleaning": "🧹"
+};
+
+const QUICK_TASKS = [
+  "Shopping companion",
+  "Pet sitting, 2 days",
+  "Rent or borrow an item",
+  "Math tutor needed",
+  "Vehicle drop to mechanic",
+  "Bike / car wash"
+];
+
+// ============ APP STATE ============
+let currentRole = "poster";
+let currentTaskId = null;
+let currentCategory = "All";
+let lastScreenBeforeDetail = "screen-home";
+let chatMessages = [...CHAT_MESSAGES];
+
+// ============ NAVIGATION ============
+function goTo(screenId) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById(screenId).classList.add("active");
+  const nav = document.getElementById("bottom-nav");
+  const navScreens = ["screen-home", "screen-map", "screen-chat", "screen-earnings", "screen-profile"];
+  nav.style.display = navScreens.includes(screenId) ? "flex" : "none";
+  window.scrollTo(0, 0);
+}
+
+function navTo(screenId) {
+  goTo(screenId);
+  document.querySelectorAll(".nav-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.screen === screenId);
+  });
+}
+
+function setRoleAndGo(role) {
+  currentRole = role;
+  document.getElementById("switch-role-label").textContent = role === "poster" ? "Helper" : "Poster";
+  navTo("screen-home");
+  renderHome();
+}
+
+function toggleRole() {
+  currentRole = currentRole === "poster" ? "helper" : "poster";
+  document.getElementById("switch-role-label").textContent = currentRole === "poster" ? "Helper" : "Poster";
+  renderHome();
+  goTo(currentRole === "helper" ? "screen-map" : "screen-home");
+}
+
+// ============ INIT ============
+window.addEventListener("DOMContentLoaded", () => {
+  renderCategoryGrid();
+  renderHome();
+  renderQuickTasks();
+  renderMapTaskList();
+  renderNotifications();
+  renderProfileTab("posted");
+  renderChat();
+  renderEarnings();
+  goTo("screen-splash");
+});
+
+// ============ CATEGORY CHIPS ============
+function renderCategoryGrid() {
+  const container = document.getElementById("category-grid");
+  const shown = CATEGORIES.filter(c => c !== "All");
+  container.innerHTML = shown.map(cat => `
+    <div class="category-chip" data-cat="${cat}" onclick="filterByCategory('${cat}', this)">
+      <span class="cat-icon">${CATEGORY_ICONS[cat] || "📌"}</span>
+      <span class="cat-label">${cat}</span>
+    </div>
+  `).join("");
+}
+
+function filterByCategory(cat, el) {
+  const already = currentCategory === cat;
+  currentCategory = already ? "All" : cat;
+  document.querySelectorAll(".category-chip").forEach(c => c.classList.remove("active"));
+  if (!already) el.classList.add("active");
+  const heading = document.getElementById("opportunities-heading");
+  heading.textContent = currentCategory === "All" ? "Nearby Opportunities" : currentCategory;
+  const filtered = currentCategory === "All" ? TASKS : TASKS.filter(t => t.category === currentCategory);
+  renderTaskList("task-list", filtered);
+}
+
+function searchTasks(query) {
+  const q = query.trim().toLowerCase();
+  const base = currentCategory === "All" ? TASKS : TASKS.filter(t => t.category === currentCategory);
+  const filtered = q ? base.filter(t => t.title.toLowerCase().includes(q) || t.category.toLowerCase().includes(q)) : base;
+  renderTaskList("task-list", filtered);
+}
+
+// ============ TASK CARDS ============
+function statusLabel(status) {
+  if (status === "open") return { text: "Open", cls: "status-open" };
+  if (status === "in_progress") return { text: "In Progress", cls: "status-progress" };
+  return { text: "Completed", cls: "status-completed" };
+}
+
+function renderTaskList(containerId, tasks) {
+  const container = document.getElementById(containerId);
+  if (!tasks.length) {
+    container.innerHTML = `<p class="muted center" style="padding:24px 0;">No tasks match that search.</p>`;
+    return;
+  }
+  container.innerHTML = tasks.map(t => {
+    const s = statusLabel(t.status);
+    return `
+      <div class="task-card" onclick="openTask('${t.id}')">
+        <div class="task-card-icon">${CATEGORY_ICONS[t.category] || "📌"}</div>
+        <div class="task-card-body">
+          <div class="task-card-top">
+            <div class="task-card-title">${t.title}</div>
+            <div class="task-card-budget num">₹${t.budget}</div>
+          </div>
+          <div class="task-card-meta">
+            <span class="status-pill ${s.cls}">${s.text}</span>
+            <span>${t.category}</span>
+            <span>·</span>
+            <span class="num">${t.distance}</span>
+            <span>·</span>
+            <span>${t.time}</span>
+          </div>
+        </div>
+      </div>`;
+  }).join("");
+}
+
+function renderHome() {
+  renderTaskList("task-list", TASKS);
+}
+
+function renderMapTaskList() {
+  renderTaskList("task-list-2", TASKS.slice(0, 5));
+}
+
+function renderQuickTasks() {
+  const container = document.getElementById("quick-task-grid");
+  container.innerHTML = QUICK_TASKS.map(q => `
+    <div class="quick-task-chip" onclick="goTo('screen-post-task')">
+      <span class="check">✓</span>
+      <span>${q}</span>
+    </div>
+  `).join("");
+}
+
+// ============ POST TASK ============
+function submitTask() {
+  goTo("screen-confirm");
+}
+
+// ============ TASK DETAIL ============
+function openTask(taskId) {
+  currentTaskId = taskId;
+  const activeScreen = document.querySelector(".screen.active");
+  if (activeScreen) lastScreenBeforeDetail = activeScreen.id;
+
+  const task = TASKS.find(t => t.id === taskId);
+  const poster = USERS[task.posterId];
+  const s = statusLabel(task.status);
+  const applicants = APPLICANTS[taskId] || [];
+
+  const applicantsHtml = applicants.length ? `
+    <h3 style="margin:18px 0 10px;">Applicants (${applicants.length})</h3>
+    ${applicants.map(a => {
+      const u = USERS[a.userId];
+      return `
+        <div class="applicant-card">
+          <img class="avatar-sm" src="${u.avatar}" alt="">
+          <div class="applicant-info">
+            <div class="applicant-name">${u.name} · ⭐ ${u.rating}</div>
+            <div class="applicant-meta">Quoted <span class="num">₹${a.quote}</span> — ${a.note}</div>
+          </div>
+          <div class="applicant-actions">
+            <button class="mini-btn" onclick="openChatWith('${u.id}')">Chat</button>
+            <button class="mini-btn primary" onclick="hireApplicant()">Hire</button>
+          </div>
+        </div>`;
+    }).join("")}
+  ` : `
+    <div style="margin-top:20px;">
+      <button class="btn btn-primary btn-block" style="background:var(--accent); color:var(--ink);" onclick="applyToTask()">Apply for this task</button>
+    </div>
+  `;
+
+  document.getElementById("task-detail-content").innerHTML = `
+    <span class="status-pill ${s.cls}">${s.text}</span>
+    <h2 class="detail-title" style="margin-top:8px;">${task.title}</h2>
+    <div class="detail-meta-row">
+      <span>${task.category}</span><span>·</span><span class="num">${task.distance}</span><span>·</span><span>${task.time}</span>
+    </div>
+    <div class="detail-budget">₹${task.budget}</div>
+    <p class="detail-desc">${task.desc}</p>
+    <div class="applicant-card" style="background:transparent;border:none;padding:0;">
+      <img class="avatar-sm" src="${poster.avatar}" alt="">
+      <div class="applicant-info">
+        <div class="applicant-name">Posted by ${poster.name}</div>
+        <div class="applicant-meta">⭐ ${poster.rating} · ${poster.occupation}</div>
+      </div>
+    </div>
+    ${applicantsHtml}
+  `;
+  goTo("screen-task-detail");
+}
+
+function goBackFromDetail() {
+  goTo(lastScreenBeforeDetail);
+}
+
+function applyToTask() {
+  alert("Application sent! (demo only — no backend)");
+  goBackFromDetail();
+}
+
+function hireApplicant() {
+  alert("Helper hired! (demo only — no backend)");
+  goTo("screen-chat");
+}
+
+// ============ CHAT ============
+function openChatWith(userId) {
+  const u = USERS[userId];
+  document.getElementById("chat-avatar").src = u.avatar;
+  document.getElementById("chat-name").textContent = u.name;
+  goTo("screen-chat");
+}
+
+function renderChat() {
+  const defaultUser = USERS["u3"];
+  document.getElementById("chat-avatar").src = defaultUser.avatar;
+  document.getElementById("chat-name").textContent = defaultUser.name;
+
+  const container = document.getElementById("chat-messages");
+  container.innerHTML = chatMessages.map(m => `
+    <div class="msg ${m.from === "me" ? "msg-me" : "msg-them"}">
+      ${m.text}
+      <div class="msg-time">${m.time}</div>
+    </div>
+  `).join("");
+  container.scrollTop = container.scrollHeight;
+}
+
+function sendMessage() {
+  const input = document.getElementById("chat-input");
+  const text = input.value.trim();
+  if (!text) return;
+  const now = new Date();
+  const time = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  chatMessages.push({ from: "me", text, time });
+  input.value = "";
+  renderChat();
+}
+
+document.addEventListener("keypress", (e) => {
+  if (e.key === "Enter" && document.activeElement.id === "chat-input") {
+    sendMessage();
+  }
+});
+
+function quickAction(type) {
+  const now = new Date();
+  const time = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  let text = "";
+  if (type === "price") text = "Confirming the price we discussed. 👍";
+  if (type === "location") text = "Sharing my location for the task. 📍";
+  if (type === "complete") text = "Marking this task as complete. ✅";
+  chatMessages.push({ from: "me", text, time });
+  renderChat();
+}
+
+// ============ NOTIFICATIONS ============
+function renderNotifications() {
+  const container = document.getElementById("notif-list");
+  container.innerHTML = NOTIFICATIONS.map(n => `
+    <div class="notif-item">
+      <div class="notif-icon">${n.icon}</div>
+      <div>
+        <div class="notif-text">${n.text}</div>
+        <div class="notif-time">${n.time}</div>
+      </div>
+    </div>
+  `).join("");
+}
+
+// ============ PROFILE ============
+function switchProfileTab(btn, tab) {
+  document.querySelectorAll(".tab-row .tab-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  renderProfileTab(tab);
+}
+
+function renderProfileTab(tab) {
+  const container = document.getElementById("profile-tab-content");
+  if (tab === "posted") {
+    const posted = TASKS.filter(t => t.posterId === "u1");
+    renderInto(container, posted);
+  } else if (tab === "completed") {
+    const completed = TASKS.filter(t => t.status === "completed");
+    renderInto(container, completed);
+  } else {
+    container.innerHTML = REVIEWS.map(r => {
+      const u = USERS[r.reviewerId];
+      return `
+        <div class="review-card">
+          <div class="review-top"><span>${u.name}</span><span>${"⭐".repeat(r.rating)}</span></div>
+          <div class="review-text">${r.text}</div>
+        </div>`;
+    }).join("");
+  }
+
+  function renderInto(container, tasks) {
+    if (!tasks.length) {
+      container.innerHTML = `<p class="muted center" style="padding:30px 0;">Nothing here yet.</p>`;
+      return;
+    }
+    container.innerHTML = `<div class="task-list">` + tasks.map(t => {
+      const s = statusLabel(t.status);
+      return `
+        <div class="task-card" onclick="openTask('${t.id}')">
+          <div class="task-card-icon">${CATEGORY_ICONS[t.category] || "📌"}</div>
+          <div class="task-card-body">
+            <div class="task-card-top">
+              <div class="task-card-title">${t.title}</div>
+              <div class="task-card-budget num">₹${t.budget}</div>
+            </div>
+            <div class="task-card-meta">
+              <span class="status-pill ${s.cls}">${s.text}</span>
+              <span>${t.category}</span>
+            </div>
+          </div>
+        </div>`;
+    }).join("") + `</div>`;
+  }
+}
+
+// ============ EARNINGS ============
+function renderEarnings() {
+  const max = Math.max(...WEEKLY_EARNINGS.map(d => d.amount));
+  const chart = document.getElementById("bar-chart");
+  chart.innerHTML = WEEKLY_EARNINGS.map(d => `
+    <div class="bar-col">
+      <div class="bar" style="height:${(d.amount / max) * 100}%;"></div>
+      <div class="bar-label">${d.day}</div>
+    </div>
+  `).join("");
+
+  const payoutList = document.getElementById("payout-list");
+  payoutList.innerHTML = PAYOUTS.map(p => `
+    <div class="payout-item">
+      <span>${p.title}<br><span class="muted small">${p.date}</span></span>
+      <span class="payout-amount num">+₹${p.amount}</span>
+    </div>
+  `).join("");
+}
+</script>
+</body>
+</html>
